@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Agent - Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-3">
+                    <i class="fab fa-github text-2xl text-gray-800"></i>
+                    <h1 class="text-xl font-bold text-gray-900">GitHub Agent</h1>
+                </div>
+                <div class="hidden md:flex items-center space-x-2 text-sm text-gray-600">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Welcome, {{ user_login }}</span>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="repositoriesBtn" 
+                        class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                    <i class="fas fa-folder"></i>
+                    <span>My Repos</span>
+                </button>
+                <a href="/auth/logout" 
+                   class="flex items-center space-x-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Sidebar -->
+        <div id="sidebar" class="w-80 bg-white border-r border-gray-200 transform -translate-x-full transition-transform duration-300 ease-in-out md:translate-x-0">
+            <div class="p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Your Repositories</h2>
+                <div id="repositoriesList" class="space-y-2">
+                    <div class="text-center py-8">
+                        <i class="fas fa-spinner fa-spin text-gray-400 text-2xl mb-2"></i>
+                        <p class="text-gray-500">Loading repositories...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Chat Messages -->
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <!-- Welcome Message -->
+                <div class="flex justify-start">
+                    <div class="max-w-xs lg:max-w-md">
+                        <div class="bg-blue-600 text-white rounded-lg px-4 py-3">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <i class="fab fa-github"></i>
+                                <span class="font-semibold">GitHub Agent</span>
+                            </div>
+                            <p>Hello! I'm your AI assistant for GitHub repositories. I can help you:</p>
+                            <ul class="mt-2 text-sm space-y-1">
+                                <li>• Analyze recent changes in your repos</li>
+                                <li>• Answer questions about your code</li>
+                                <li>• Provide insights on commits and issues</li>
+                                <li>• Help with code reviews and best practices</li>
+                            </ul>
+                            <p class="mt-2 text-sm">Try asking: "Tell me about recent changes in my repositories"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Input -->
+            <div class="bg-white border-t border-gray-200 p-6">
+                <form id="chatForm" class="flex space-x-4">
+                    <div class="flex-1 relative">
+                        <input type="text" 
+                               id="messageInput" 
+                               placeholder="Ask me about your GitHub repositories..." 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                               autocomplete="off">
+                        <button type="button" 
+                                id="attachRepoBtn"
+                                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                    </div>
+                    <button type="submit" 
+                            id="sendBtn"
+                            class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+                <div class="mt-2 text-xs text-gray-500">
+                    <i class="fas fa-lightbulb mr-1"></i>
+                    Try: "What are my most active repositories?" or "Show me recent commits in [repo-name]"
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Repository Modal -->
+    <div id="repoModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Select Repository</h3>
+                <button id="closeRepoModal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="repoModalContent" class="space-y-2">
+                <!-- Repository list will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-6 text-center">
+            <i class="fas fa-spinner fa-spin text-2xl text-blue-600 mb-4"></i>
+            <p class="text-gray-700">Processing your request...</p>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedRepos = [];
+        let repositories = [];
+
+        // DOM elements
+        const chatMessages = document.getElementById('chatMessages');
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const sidebar = document.getElementById('sidebar');
+        const repositoriesList = document.getElementById('repositoriesList');
+        const repoModal = document.getElementById('repoModal');
+        const repoModalContent = document.getElementById('repoModalContent');
+        const closeRepoModal = document.getElementById('closeRepoModal');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const attachRepoBtn = document.getElementById('attachRepoBtn');
+
+        // Load repositories on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRepositories();
+        });
+
+        // Load repositories
+        async function loadRepositories() {
+            try {
+                const response = await fetch('/api/repositories');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    repositories = data.repositories;
+                    displayRepositories(data.repositories);
+                } else {
+                    showError('Failed to load repositories: ' + data.detail);
+                }
+            } catch (error) {
+                console.error('Error loading repositories:', error);
+                showError('Failed to load repositories');
+            }
+        }
+
+        // Display repositories in sidebar
+        function displayRepositories(repos) {
+            repositoriesList.innerHTML = '';
+            
+            if (repos.length === 0) {
+                repositoriesList.innerHTML = '<p class="text-gray-500 text-center py-4">No repositories found</p>';
+                return;
+            }
+
+            repos.forEach(repo => {
+                const repoElement = document.createElement('div');
+                repoElement.className = 'p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition duration-200';
+                repoElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-gray-900 truncate">${repo.name}</h4>
+                            <p class="text-sm text-gray-500 truncate">${repo.description || 'No description'}</p>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <span class="text-xs text-gray-400">${repo.private ? 'Private' : 'Public'}</span>
+                                <span class="text-xs text-gray-400">•</span>
+                                <span class="text-xs text-gray-400">⭐ ${repo.stars || 0}</span>
+                            </div>
+                        </div>
+                        <button class="ml-2 p-1 text-gray-400 hover:text-blue-600" onclick="selectRepo('${repo.name}')">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                `;
+                repositoriesList.appendChild(repoElement);
+            });
+        }
+
+        // Select repository for context
+        function selectRepo(repoName) {
+            if (!selectedRepos.includes(repoName)) {
+                selectedRepos.push(repoName);
+                updateSelectedRepos();
+            }
+        }
+
+        // Update selected repositories display
+        function updateSelectedRepos() {
+            const selectedReposDiv = document.getElementById('selectedRepos');
+            if (selectedReposDiv) {
+                selectedReposDiv.innerHTML = selectedRepos.map(repo => 
+                    `<span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full mr-2 mb-2">
+                        ${repo} <button onclick="removeRepo('${repo}')" class="ml-1 text-blue-600 hover:text-blue-800">×</button>
+                    </span>`
+                ).join('');
+            }
+        }
+
+        // Remove repository from selection
+        function removeRepo(repoName) {
+            selectedRepos = selectedRepos.filter(repo => repo !== repoName);
+            updateSelectedRepos();
+        }
+
+        // Chat form submission
+        chatForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            // Add user message to chat
+            addMessage(message, 'user');
+            messageInput.value = '';
+
+            // Show loading
+            showLoading();
+
+            try {
+                // Prepare message with repository context
+                let contextualMessage = message;
+                if (selectedRepos.length > 0) {
+                    contextualMessage = `Context: Focus on these repositories: ${selectedRepos.join(', ')}. ${message}`;
+                }
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: contextualMessage,
+                        user_id: '{{ user_id }}'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addMessage(data.response, 'assistant');
+                } else {
+                    addMessage('Sorry, I encountered an error: ' + (data.error || 'Unknown error'), 'assistant');
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+                addMessage('Sorry, I encountered an error processing your request.', 'assistant');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Add message to chat
+        function addMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = `max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
+                sender === 'user' 
+                    ? 'bg-gray-600 text-white' 
+                    : 'bg-white border border-gray-200 text-gray-900'
+            }`;
+            
+            if (sender === 'assistant') {
+                messageContent.innerHTML = `
+                    <div class="flex items-center space-x-2 mb-2">
+                        <i class="fab fa-github"></i>
+                        <span class="font-semibold">GitHub Agent</span>
+                    </div>
+                    <div class="whitespace-pre-wrap">${content}</div>
+                `;
+            } else {
+                messageContent.innerHTML = `<div class="whitespace-pre-wrap">${content}</div>`;
+            }
+            
+            messageDiv.appendChild(messageContent);
+            chatMessages.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Show loading overlay
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+            sendBtn.disabled = true;
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+            loadingOverlay.classList.remove('flex');
+            sendBtn.disabled = false;
+        }
+
+        // Show error message
+        function showError(message) {
+            addMessage(`❌ ${message}`, 'assistant');
+        }
+
+        // Toggle sidebar on mobile
+        function toggleSidebar() {
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        // Event listeners
+        attachRepoBtn.addEventListener('click', function() {
+            repoModal.classList.remove('hidden');
+            repoModal.classList.add('flex');
+            populateRepoModal();
+        });
+
+        closeRepoModal.addEventListener('click', function() {
+            repoModal.classList.add('hidden');
+            repoModal.classList.remove('flex');
+        });
+
+        // Close modal when clicking outside
+        repoModal.addEventListener('click', function(e) {
+            if (e.target === repoModal) {
+                repoModal.classList.add('hidden');
+                repoModal.classList.remove('flex');
+            }
+        });
+
+        // Populate repository modal
+        function populateRepoModal() {
+            repoModalContent.innerHTML = '';
+            
+            repositories.forEach(repo => {
+                const repoElement = document.createElement('div');
+                repoElement.className = 'p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition duration-200';
+                repoElement.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-medium text-gray-900">${repo.name}</h4>
+                            <p class="text-sm text-gray-500">${repo.description || 'No description'}</p>
+                        </div>
+                        <input type="checkbox" 
+                               class="ml-2" 
+                               ${selectedRepos.includes(repo.name) ? 'checked' : ''}
+                               onchange="toggleRepoSelection('${repo.name}')">
+                    </div>
+                `;
+                repoModalContent.appendChild(repoElement);
+            });
+        }
+
+        // Toggle repository selection
+        function toggleRepoSelection(repoName) {
+            if (selectedRepos.includes(repoName)) {
+                selectedRepos = selectedRepos.filter(repo => repo !== repoName);
+            } else {
+                selectedRepos.push(repoName);
+            }
+        }
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        // Focus on input
+        messageInput.focus();
+    </script>
+</body>
+</html>

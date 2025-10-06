@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Debug - GitHub Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">OAuth Debug Page</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">OAuth Flow Test</h2>
+            <p class="mb-4">This page helps debug the OAuth flow. Click the button below to test the authentication process.</p>
+            
+            <button id="testOAuth" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
+                Test OAuth Flow
+            </button>
+            
+            <div id="results" class="mt-4 p-4 bg-gray-50 rounded hidden">
+                <h3 class="font-semibold mb-2">Test Results:</h3>
+                <div id="resultContent"></div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Current URL Parameters</h2>
+            <div id="urlParams" class="font-mono text-sm bg-gray-100 p-3 rounded">
+                <!-- URL parameters will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Display current URL parameters
+        function displayUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paramsDiv = document.getElementById('urlParams');
+            
+            if (urlParams.toString()) {
+                let html = '<strong>URL Parameters:</strong><br>';
+                for (const [key, value] of urlParams) {
+                    html += `${key}: ${value}<br>`;
+                }
+                paramsDiv.innerHTML = html;
+            } else {
+                paramsDiv.innerHTML = '<em>No URL parameters found</em>';
+            }
+        }
+        
+        // Test OAuth flow
+        document.getElementById('testOAuth').addEventListener('click', async function() {
+            const resultsDiv = document.getElementById('results');
+            const contentDiv = document.getElementById('resultContent');
+            
+            resultsDiv.classList.remove('hidden');
+            contentDiv.innerHTML = '<div class="text-blue-600">Testing OAuth flow...</div>';
+            
+            try {
+                // Step 1: Get OAuth URL
+                const response = await fetch('/auth/login', {
+                    method: 'GET',
+                    redirect: 'manual'
+                });
+                
+                if (response.status === 307) {
+                    const redirectUrl = response.headers.get('Location');
+                    contentDiv.innerHTML = `
+                        <div class="text-green-600 mb-2">✅ OAuth URL generated successfully</div>
+                        <div class="text-sm text-gray-600 mb-2">Redirect URL: ${redirectUrl}</div>
+                        <div class="text-sm text-gray-600">Status: ${response.status}</div>
+                    `;
+                    
+                    // Extract state from URL
+                    const stateMatch = redirectUrl.match(/state=([^&]+)/);
+                    if (stateMatch) {
+                        const state = stateMatch[1];
+                        contentDiv.innerHTML += `
+                            <div class="text-sm text-gray-600 mt-2">State: ${state.substring(0, 20)}...</div>
+                        `;
+                    }
+                } else {
+                    contentDiv.innerHTML = `
+                        <div class="text-red-600">❌ Unexpected response status: ${response.status}</div>
+                    `;
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="text-red-600">❌ Error: ${error.message}</div>
+                `;
+            }
+        });
+        
+        // Initialize page
+        displayUrlParams();
+    </script>
+</body>
+</html>

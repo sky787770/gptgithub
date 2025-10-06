@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Agent - Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full mx-4">
+        <div class="bg-white rounded-lg shadow-xl p-8">
+            <!-- Logo and Title -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-900 rounded-full mb-4">
+                    <i class="fab fa-github text-white text-2xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900">GitHub Agent</h1>
+                <p class="text-gray-600 mt-2">AI-powered assistant for your GitHub repositories</p>
+            </div>
+
+            <!-- Features -->
+            <div class="mb-8">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">What you can do:</h3>
+                <ul class="space-y-2 text-gray-600">
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Ask questions about your repositories
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Get insights on recent changes
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Analyze code and commits
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                        Access both public and private repos
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Login Button -->
+            <div class="text-center">
+                <a href="/auth/login" 
+                   class="inline-flex items-center justify-center w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 transform hover:scale-105">
+                    <i class="fab fa-github mr-3 text-xl"></i>
+                    Continue with GitHub
+                </a>
+                <p class="text-sm text-gray-500 mt-4">
+                    We'll only access repositories you choose to share
+                </p>
+            </div>
+
+            <!-- Security Note -->
+            <div class="mt-8 p-4 bg-blue-50 rounded-lg">
+                <div class="flex items-start">
+                    <i class="fas fa-shield-alt text-blue-500 mt-1 mr-3"></i>
+                    <div>
+                        <h4 class="text-sm font-semibold text-blue-900">Secure Authentication</h4>
+                        <p class="text-xs text-blue-700 mt-1">
+                            Your GitHub credentials are never stored. We use OAuth for secure, temporary access.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center mt-8">
+            <p class="text-gray-400 text-sm">
+                Powered by A2A Framework & OpenAI
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginButton = document.querySelector('a[href="/auth/login"]');
+            
+            loginButton.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+            
+            loginButton.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html>
